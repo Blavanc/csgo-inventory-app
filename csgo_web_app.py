@@ -31,8 +31,20 @@ if steam_id:
             count = item.get("count", 1)
             total = price * count
             total_value += total
+            tags = item.get("tags", [])
+            collection = next(
+    (
+        tag["localized_tag_name"]   
+        for tag in tags               
+        if tag["category"] == "ItemSet"  
+    ),
+    "Inconnue"                         
+)
+            type_tag = next((tag["localized_tag_name"] for tag in tags if tag["category"] == "Type"), "Inconnu")
             skins.append({
                 "Nom du skin": name,
+                "Type": type_tag,
+                "Collection": collection,
                 "Prix unitaire (€)": round(price, 2),
                 "Quantité": count,
                 "Total (€)": round(total, 2)
@@ -40,12 +52,15 @@ if steam_id:
 
         df = pd.DataFrame(skins)
         df = df.sort_values("Total (€)", ascending=False)
+   
+   # Checkbox pour filtrer uniquement les armes
+        if st.checkbox("Afficher uniquement les skins d'armes"):
+            df = df[~df['Type'].isin(['Graffiti', 'Sticker', 'Container'])].reset_index(drop=True)
+            total_value = df["Total (€)"].sum()
 
-        
         st.success(f"💰 Valeur totale estimée de l'inventaire : **{round(total_value, 2)} €**")
         st.dataframe(df.reset_index(drop=True))
 
-        
         csv = df.to_csv(index=False).encode('utf-8-sig')
         st.download_button(
             label="📥 Télécharger en CSV",
@@ -55,3 +70,4 @@ if steam_id:
         )
     else:
         st.warning("Aucun item trouvé dans l'inventaire.")
+

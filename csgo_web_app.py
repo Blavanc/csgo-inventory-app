@@ -97,13 +97,5 @@ if steam_id:
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Pas de données de vente pour ce skin.") 
-
-        csv = df.to_csv(index=False).encode('utf-8-sig')
-        st.download_button(
-            label="📥 Télécharger en CSV",
-            data=csv,
-            file_name='inventaire_csgo.csv',
-            mime='text/csv'
-        )
 else:
         st.warning("Aucun item trouvé dans l'inventaire.")

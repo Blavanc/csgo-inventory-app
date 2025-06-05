@@ -61,7 +61,8 @@ if steam_id:
 
         st.success(f"💰 Valeur totale estimée de l'inventaire : **{round(total_value, 2)} €**")
         st.dataframe(df.reset_index(drop=True))
-       # Ajouter ce bloc après la récupération de `selected_skin`
+        skin_names = df["Nom du skin"].tolist()
+        selected_skin = st.selectbox("📈 Choisissez un skin pour voir l'évolution du prix :", skin_names)
 
         @st.cache_data
         def load_price_history():
@@ -93,6 +94,7 @@ if steam_id:
             )
             fig.update_layout(template="plotly_white", xaxis_title="Date", yaxis_title="Prix (€)")
             st.plotly_chart(fig, use_container_width=True)
+            skin_data = next((item for item in data if selected_skin.lower() in item.get("marketname", "").lower()), None)
         if skin_data and "latest10steamsales" in skin_data:
                     sales_data = skin_data["latest10steamsales"]
                     sales_df = pd.DataFrame(sales_data, columns=["Date", "Prix (€)", "Nombre de ventes"])

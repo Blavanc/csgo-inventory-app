@@ -61,41 +61,65 @@ if steam_id:
 
         st.success(f"💰 Valeur totale estimée de l'inventaire : **{round(total_value, 2)} €**")
         st.dataframe(df.reset_index(drop=True))
-        # 📌 Menu déroulant pour choisir un skin
-        st.markdown("## 📈 Évolution du prix")
-        st.divider ()
-        skin_names = df["Nom du skin"].tolist()
-        selected_skin = st.selectbox("📈 Choisissez un skin pour voir l'évolution du prix :", skin_names)
+       # Ajouter ce bloc après la récupération de `selected_skin`
 
-# 📌 On retrouve l'objet JSON complet correspondant à ce skin
-        skin_data = next((item for item in data if selected_skin.lower() in item.get("marketname", "").lower()), None)
+        @st.cache_data
+        def load_price_history():
+            try:
+                return pd.read_csv("data/csgo_prices.csv")
+            except FileNotFoundError:
+                st.warning("Le fichier historique de prix est introuvable.")
+                return pd.DataFrame()
 
-        if skin_data and "latest10steamsales" in skin_data:
-            sales_data = skin_data["latest10steamsales"]
-            sales_df = pd.DataFrame(sales_data, columns=["Date", "Prix (€)", "Nombre de ventes"])
-            sales_df["Date"] = pd.to_datetime(sales_df["Date"])
-            sales_df = sales_df.sort_values("Date")
+        price_df = load_price_history()
 
-            # 📊 Création du graphique interactif avec plotly
+        if not price_df.empty and selected_skin in price_df["Nom du skin"].values:
+            skin_row = price_df[price_df["Nom du skin"] == selected_skin]
+
+            history = skin_row.drop(columns=["Nom du skin"]).T.reset_index()
+            history.columns = ["Date", "Prix"]
+            history["Plateforme"] = history["Date"].apply(lambda x: "Steam" if "Steam" in x else "SkinBaron" if "SkinBaron" in x else "Autre")
+            history["Date"] = history["Date"].str.replace("Steam - ", "").str.replace("SkinBaron - ", "")
+            history["Date"] = pd.to_datetime(history["Date"], errors="coerce")
+            history = history.dropna(subset=["Date", "Prix"])
+
             fig = px.line(
-                sales_df,
+                history,
                 x="Date",
-                y="Prix (€)",
-                title=f"Évolution du prix de : {selected_skin}",
+                y="Prix",
+                color="Plateforme",
+                title=f"Évolution du prix (Steam vs SkinBaron) : {selected_skin}",
                 markers=True
             )
-
-            # 🎨 Mise en forme améliorée
-            fig.update_layout(
-                xaxis_title="Date",
-                yaxis_title="Prix (€)",
-                xaxis_tickformat="%Y-%m-%d",  # Format de date plus lisible
-                template="plotly_white"
-            )
-
-            # 🖼️ Affichage dans Streamlit
+            fig.update_layout(template="plotly_white", xaxis_title="Date", yaxis_title="Prix (€)")
             st.plotly_chart(fig, use_container_width=True)
+        if skin_data and "latest10steamsales" in skin_data:
+                    sales_data = skin_data["latest10steamsales"]
+                    sales_df = pd.DataFrame(sales_data, columns=["Date", "Prix (€)", "Nombre de ventes"])
+                    sales_df["Date"] = pd.to_datetime(sales_df["Date"])
+                    sales_df = sales_df.sort_values("Date")
+
+                    # 📊 Création du graphique interactif avec plotly
+                    fig = px.line(
+                        sales_df,
+                        x="Date",
+                        y="Prix (€)",
+                        title=f"Évolution du prix de : {selected_skin}",
+                        markers=True
+                    )
+
+                    # 🎨 Mise en forme améliorée
+                    fig.update_layout(
+                        xaxis_title="Date",
+                        yaxis_title="Prix (€)",
+                        xaxis_tickformat="%Y-%m-%d",  # Format de date plus lisible
+                        template="plotly_white"
+                    )
+
+                    # 🖼️ Affichage dans Streamlit
+                    st.plotly_chart(fig, use_container_width=True)
+        else:
+                st.warning("Pas de données de vente pour ce skin.")
+
     else:
-        st.warning("Pas de données de vente pour ce skin.") 
-else:
-        st.warning("Aucun item trouvé dans l'inventaire.")
+                st.warning("Aucun item trouvé dans l'inventaire.")

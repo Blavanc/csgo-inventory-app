@@ -94,34 +94,6 @@ if steam_id:
             )
             fig.update_layout(template="plotly_white", xaxis_title="Date", yaxis_title="Prix (€)")
             st.plotly_chart(fig, use_container_width=True)
-            skin_data = next((item for item in data if selected_skin.lower() in item.get("marketname", "").lower()), None)
-        if skin_data and "latest10steamsales" in skin_data:
-                    sales_data = skin_data["latest10steamsales"]
-                    sales_df = pd.DataFrame(sales_data, columns=["Date", "Prix (€)", "Nombre de ventes"])
-                    sales_df["Date"] = pd.to_datetime(sales_df["Date"])
-                    sales_df = sales_df.sort_values("Date")
-
-                    # 📊 Création du graphique interactif avec plotly
-                    fig = px.line(
-                        sales_df,
-                        x="Date",
-                        y="Prix (€)",
-                        title=f"Évolution du prix de : {selected_skin}",
-                        markers=True
-                    )
-
-                    # 🎨 Mise en forme améliorée
-                    fig.update_layout(
-                        xaxis_title="Date",
-                        yaxis_title="Prix (€)",
-                        xaxis_tickformat="%Y-%m-%d",  # Format de date plus lisible
-                        template="plotly_white"
-                    )
-
-                    # 🖼️ Affichage dans Streamlit
-                    st.plotly_chart(fig, use_container_width=True)
-        else:
-                st.warning("Pas de données de vente pour ce skin.")
 
     else:
                 st.warning("Aucun item trouvé dans l'inventaire.")
